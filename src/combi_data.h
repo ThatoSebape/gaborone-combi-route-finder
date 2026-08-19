@@ -33,7 +33,7 @@ inline std::unordered_map<std::string, std::vector<std::string>> hubRoutes = {
     }},
 
     {"Riverwalk Mall", {
-        "Tlokweng Route 1", "Tlokweng Route 2", "Tlokweng Gamecity Route 6"
+        "Tlokweng Route 1", "Tlokweng Route 2", "Tlokweng Route 6"
     }},
 
     {"Sebele Centre/Northgate Crossing", {
@@ -41,11 +41,11 @@ inline std::unordered_map<std::string, std::vector<std::string>> hubRoutes = {
     }},
 
     {"Westgate Mall", {
-        "Block 6/Mogoditshane Route 8", "Broadhurst Route 6 Gamecity"
+        "Block 6/Mogoditshane Route 8", "Broadhurst Route 6"
     }},
 
     {"Game City", {
-        "Kgaleview Route 2", "Broadhurst Route 6", "Mogoditshane Route 11 Gamecity", "Tlokweng Route 6 Gamecity"
+        "Kgaleview Route 2", "Broadhurst Route 6", "Mogoditshane Route 11 Gamecity", "Tlokweng Route 6"
     }},
 
     {"MiddleStar", {
@@ -57,8 +57,7 @@ inline std::unordered_map<std::string, std::vector<std::string>> hubRoutes = {
     }},
 
     {"Southring Mall", {
-        "Tlokweng Route 1", "Tlokweng Route 2", "Tlokweng Route 3",
-        "Riverwalk", "South ring", "Main mall"
+        "Tlokweng Route 1", "Tlokweng Route 2", "Tlokweng Route 3"
     }},
 
     {"Main Mall", {
@@ -91,7 +90,15 @@ inline std::unordered_map<std::string, std::vector<std::string>> hubLandmarks = 
     {"Square Mart", {"Three Dikgosi Monument", "Industrial Court", "SADC"}},
 };
 
-// Derive hub-to-hub adjacency: two hubs are connected if they share a route.
+// Direct hub-to-hub links noted in the source data without a specific
+// named/numbered route attached — i.e. "you can get there directly,"
+// but there's no route name to tell someone to look for.
+inline std::vector<std::pair<std::string, std::string>> unnamedDirectLinks = {
+    {"Southring Mall", "Main Mall"},
+};
+
+// Derive hub-to-hub adjacency: two hubs are connected if they share a
+// named route, OR if they're listed as an unnamed direct link.
 inline std::unordered_map<std::string, std::vector<Connection>> buildAdjacencyList() {
     std::unordered_map<std::string, std::vector<Connection>> adjacency;
 
@@ -109,6 +116,12 @@ inline std::unordered_map<std::string, std::vector<Connection>> buildAdjacencyLi
                 adjacency[hubs[i]].push_back(Connection{hubs[j], route});
             }
         }
+    }
+
+    const std::string unnamedLabel = "Direct connection (specific route not recorded)";
+    for (const auto& [hubA, hubB] : unnamedDirectLinks) {
+        adjacency[hubA].push_back(Connection{hubB, unnamedLabel});
+        adjacency[hubB].push_back(Connection{hubA, unnamedLabel});
     }
 
     return adjacency;
