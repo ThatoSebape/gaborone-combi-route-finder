@@ -2,19 +2,347 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Combi Route Finder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gaborone Combi Route Finder</title>
+  <style>
+    :root {
+      --accent: #1a7f5a;
+      --bg: #f7f7f5;
+      --card: #ffffff;
+      --border: #e0e0dc;
+      --text: #222;
+      --muted: #666;
+      --warn-bg: #fff4e5;
+      --warn-border: #e8b464;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    p.subtitle { color: var(--muted); margin-top: 0; margin-bottom: 24px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab {
+      flex: 1;
+      width: auto;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .search-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .field { margin-bottom: 14px; }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 1rem;
+      background: white;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      background: var(--accent);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+    #results, #detailResults { margin-top: 20px; }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .step .leg-number { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .step .leg-route { font-weight: 600; margin-top: 2px; }
+    .notice {
+      padding: 14px;
+      border-radius: 6px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      color: #6b4a12;
+    }
+    .muted-msg { color: var(--muted); font-style: italic; }
+    .browse-caption { color: var(--muted); font-size: 0.85rem; margin: 0 0 14px; }
+    .route-entry {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .route-name { font-weight: 700; margin-bottom: 4px; }
+    .route-stops { color: var(--muted); font-size: 0.9rem; }
+    .detail-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .detail-hub-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 12px; }
+    .detail-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+    .detail-block { margin-bottom: 14px; }
+    .pill-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pill {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.85rem;
+    }
+  </style>
 </head>
 <body>
   <h1>Gaborone Combi Route Finder</h1>
-  <button id="pingBtn">Test API connection</button>
-  <pre id="output">(click the button)</pre>
+  <p class="subtitle">Find which combi to catch between malls and hubs around Gaborone.</p>
+
+  <div class="tabs">
+    <button id="tabSearch" class="tab active">Find a route</button>
+    <button id="tabBrowse" class="tab">Browse all routes</button>
+    <button id="tabDetails" class="tab">Hub details</button>
+  </div>
+
+  <div id="searchView">
+    <div class="search-card">
+      <div class="field">
+        <label for="fromSelect">From</label>
+        <select id="fromSelect"></select>
+      </div>
+      <div class="field">
+        <label for="toSelect">To</label>
+        <select id="toSelect"></select>
+      </div>
+      <button id="findBtn">Find route</button>
+    </div>
+    <div id="results"></div>
+  </div>
+
+  <div id="browseView" style="display:none;">
+    <p class="browse-caption">Every combi route in the data, and the stops it serves. (Listed stops aren't necessarily in physical travel order)</p>
+    <div id="routesList"></div>
+  </div>
+
+  <div id="detailsView" style="display:none;">
+    <div class="search-card">
+      <div class="field">
+        <label for="hubDetailSelect">Mall / hub</label>
+        <select id="hubDetailSelect"></select>
+      </div>
+      <button id="detailBtn">View details</button>
+    </div>
+    <div id="detailResults"></div>
+  </div>
 
   <script>
-    document.getElementById('pingBtn').addEventListener('click', async () => {
-      const res = await fetch('/api/ping');
-      const data = await res.json();
-      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-    });
+    const fromSelect = document.getElementById('fromSelect');
+    const toSelect = document.getElementById('toSelect');
+    const findBtn = document.getElementById('findBtn');
+    const results = document.getElementById('results');
+
+    const tabSearch = document.getElementById('tabSearch');
+    const tabBrowse = document.getElementById('tabBrowse');
+    const tabDetails = document.getElementById('tabDetails');
+    const searchView = document.getElementById('searchView');
+    const browseView = document.getElementById('browseView');
+    const detailsView = document.getElementById('detailsView');
+    const routesList = document.getElementById('routesList');
+    let routesLoaded = false;
+
+    const hubDetailSelect = document.getElementById('hubDetailSelect');
+    const detailBtn = document.getElementById('detailBtn');
+    const detailResults = document.getElementById('detailResults');
+
+    async function loadHubs() {
+      const res = await fetch('/api/hubs');
+      const hubs = await res.json();
+      hubs.sort();
+
+      for (const hub of hubs) {
+        fromSelect.add(new Option(hub, hub));
+        toSelect.add(new Option(hub, hub));
+        hubDetailSelect.add(new Option(hub, hub));
+      }
+      if (hubs.length > 1) toSelect.selectedIndex = 1;
+    }
+
+    function renderResults(data) {
+      results.innerHTML = '';
+
+      if (data.message) {
+        const div = document.createElement('div');
+        const isWarning = data.steps.length === 0 && data.from !== data.to;
+        div.className = isWarning ? 'notice' : 'muted-msg';
+        div.textContent = data.message;
+        results.appendChild(div);
+        return;
+      }
+
+      data.steps.forEach((step, index) => {
+        const div = document.createElement('div');
+        div.className = 'step';
+        div.innerHTML = `
+          <div class="leg-number">Step ${index + 1}</div>
+          <div>${step.from} → ${step.to}</div>
+          <div class="leg-route">Catch: ${step.route}</div>
+        `;
+        results.appendChild(div);
+      });
+    }
+
+    async function findRoute() {
+      const from = fromSelect.value;
+      const to = toSelect.value;
+
+      findBtn.disabled = true;
+      findBtn.textContent = 'Searching…';
+      results.innerHTML = '';
+
+      try {
+        const url = `/api/route?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        renderResults(data);
+      } catch (err) {
+        results.innerHTML = '<div class="notice">Something went wrong reaching the server. Try again.</div>';
+      } finally {
+        findBtn.disabled = false;
+        findBtn.textContent = 'Find route';
+      }
+    }
+
+    async function loadAllRoutes() {
+      routesList.innerHTML = '<div class="muted-msg">Loading…</div>';
+      try {
+        const res = await fetch('/api/routes');
+        const data = await res.json();
+        data.sort((a, b) => a.route.localeCompare(b.route));
+
+        routesList.innerHTML = '';
+        data.forEach(entry => {
+          entry.hubs.sort();
+          const div = document.createElement('div');
+          div.className = 'route-entry';
+          div.innerHTML = `
+            <div class="route-name">${entry.route}</div>
+            <div class="route-stops">${entry.hubs.join(', ')}</div>
+          `;
+          routesList.appendChild(div);
+        });
+        routesLoaded = true;
+      } catch (err) {
+        routesList.innerHTML = '<div class="notice">Could not load routes. Try again.</div>';
+      }
+    }
+
+    async function loadHubDetail() {
+      const name = hubDetailSelect.value;
+
+      detailBtn.disabled = true;
+      detailBtn.textContent = 'Loading…';
+      detailResults.innerHTML = '';
+
+      try {
+        const url = `/api/hub?name=${encodeURIComponent(name)}`;
+        const res = await fetch(url);
+
+        if (!res.ok) {
+          detailResults.innerHTML = '<div class="notice">Could not load details for this hub.</div>';
+          return;
+        }
+
+        const data = await res.json();
+
+        const routesHtml = data.routes.map(r => `<span class="pill">${r}</span>`).join('');
+        const landmarksHtml = data.landmarks.length
+          ? data.landmarks.map(l => `<span class="pill">${l}</span>`).join('')
+          : '<span class="muted-msg">No landmarks recorded for this hub.</span>';
+
+        detailResults.innerHTML = `
+          <div class="detail-card">
+            <div class="detail-hub-name">${data.name}</div>
+            <div class="detail-block">
+              <div class="detail-label">Routes that stop here</div>
+              <div class="pill-list">${routesHtml}</div>
+            </div>
+            <div class="detail-block">
+              <div class="detail-label">What's nearby</div>
+              <div class="pill-list">${landmarksHtml}</div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        detailResults.innerHTML = '<div class="notice">Something went wrong reaching the server. Try again.</div>';
+      } finally {
+        detailBtn.disabled = false;
+        detailBtn.textContent = 'View details';
+      }
+    }
+
+    function showSearch() {
+      searchView.style.display = '';
+      browseView.style.display = 'none';
+      detailsView.style.display = 'none';
+      tabSearch.classList.add('active');
+      tabBrowse.classList.remove('active');
+      tabDetails.classList.remove('active');
+    }
+
+    function showBrowse() {
+      searchView.style.display = 'none';
+      browseView.style.display = '';
+      detailsView.style.display = 'none';
+      tabSearch.classList.remove('active');
+      tabBrowse.classList.add('active');
+      tabDetails.classList.remove('active');
+      if (!routesLoaded) loadAllRoutes();
+    }
+
+    function showDetails() {
+      searchView.style.display = 'none';
+      browseView.style.display = 'none';
+      detailsView.style.display = '';
+      tabSearch.classList.remove('active');
+      tabBrowse.classList.remove('active');
+      tabDetails.classList.add('active');
+    }
+
+    tabSearch.addEventListener('click', showSearch);
+    tabBrowse.addEventListener('click', showBrowse);
+    tabDetails.addEventListener('click', showDetails);
+    findBtn.addEventListener('click', findRoute);
+    detailBtn.addEventListener('click', loadHubDetail);
+    loadHubs();
   </script>
 </body>
 </html>

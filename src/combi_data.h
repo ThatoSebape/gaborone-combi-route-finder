@@ -97,17 +97,24 @@ inline std::vector<std::pair<std::string, std::string>> unnamedDirectLinks = {
     {"Southring Mall", "Main Mall"},
 };
 
-// Derive hub-to-hub adjacency: two hubs are connected if they share a
-// named route, OR if they're listed as an unnamed direct link.
-inline std::unordered_map<std::string, std::vector<Connection>> buildAdjacencyList() {
-    std::unordered_map<std::string, std::vector<Connection>> adjacency;
-
+// Invert hubRoutes into route -> hubs (which hubs each named route serves).
+// Shared by buildAdjacencyList() and the "browse all routes" endpoint,
+// so this inversion only lives in one place.
+inline std::unordered_map<std::string, std::vector<std::string>> buildRouteHubs() {
     std::unordered_map<std::string, std::vector<std::string>> routeHubs;
     for (const auto& [hub, routes] : hubRoutes) {
         for (const auto& route : routes) {
             routeHubs[route].push_back(hub);
         }
     }
+    return routeHubs;
+}
+
+// Derive hub-to-hub adjacency: two hubs are connected if they share a
+// named route, OR if they're listed as an unnamed direct link.
+inline std::unordered_map<std::string, std::vector<Connection>> buildAdjacencyList() {
+    std::unordered_map<std::string, std::vector<Connection>> adjacency;
+    auto routeHubs = buildRouteHubs();
 
     for (const auto& [route, hubs] : routeHubs) {
         for (size_t i = 0; i < hubs.size(); ++i) {

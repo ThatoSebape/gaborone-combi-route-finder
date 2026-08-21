@@ -31,6 +31,23 @@ int main()
         return result;
     });
 
+    CROW_ROUTE(app, "/api/routes")([](){
+        auto routeHubs = buildRouteHubs();
+
+        crow::json::wvalue json;
+        int i = 0;
+        for (const auto& [route, hubs] : routeHubs) {
+            crow::json::wvalue entry;
+            entry["route"] = route;
+            int j = 0;
+            for (const auto& hub : hubs) {
+                entry["hubs"][j++] = hub;
+            }
+            json[i++] = std::move(entry);
+        }
+        return json;
+    });
+
     CROW_ROUTE(app, "/api/hub")([](const crow::request& req){
         crow::response res;
 
